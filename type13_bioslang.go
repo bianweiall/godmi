@@ -39,7 +39,7 @@ type BIOSLanguageInformation struct {
 func (b BIOSLanguageInformation) String() string {
 	return fmt.Sprintf("BIOS Language Information:\n"+
 		"\tInstallable Languages %s\n"+
-		"\tFlags: %s\n"+
+		"\tFlags: %v\n"+
 		"\tCurrent Language: %s",
 		b.InstallableLanguage,
 		b.Flags,

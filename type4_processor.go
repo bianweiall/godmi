@@ -7,8 +7,10 @@
 package godmi
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type ProcessorType byte
@@ -32,6 +34,10 @@ func (p ProcessorType) String() string {
 		"VideoProcessor",
 	}
 	return types[p-1]
+}
+
+func (p ProcessorType) MarshalText() ([]byte, error) {
+	return []byte(p.String()), nil
 }
 
 type ProcessorFamily uint16
@@ -311,6 +317,10 @@ const (
 	_
 	_
 )
+
+func (p ProcessorFamily) MarshalText() ([]byte, error) {
+	return []byte(p.String()), nil
+}
 
 func (p ProcessorFamily) String() string {
 	families := [...]string{
@@ -617,6 +627,10 @@ func (p ProcessorVoltage) String() string {
 	return fmt.Sprintf("%.1fV", float32(p-0x80)/10)
 }
 
+func (p ProcessorVoltage) MarshalText() ([]byte, error) {
+	return []byte(p.String()), nil
+}
+
 type ProcessorStatus byte
 
 const (
@@ -635,19 +649,13 @@ func (p ProcessorStatus) String() string {
 		"Unknown", // 0
 		"CPU Enabled",
 		"Disabled By User through BIOS Setup",
-		"Disabled By BIOSa(POST Error)",
+		"Disabled By BIOS (POST Error)",
 		"CPU is Idle, waiting to be enabled",
 		"Reserved",
 		"Reserved",
 		"Other",
 	}
-	var ret string
-	ret += "Bits 2:0 : " + status[p&0x07]
-
-	if p&0x40 != 0 {
-		ret += "\n Bit 6: CPU Socket Polulated \n "
-	}
-	return ret
+	return status[p&0x07]
 }
 
 func (p ProcessorStatus) StringList() []string {
@@ -656,7 +664,7 @@ func (p ProcessorStatus) StringList() []string {
 		"Unknown", // 0
 		"CPU Enabled",
 		"Disabled By User through BIOS Setup",
-		"Disabled By BIOSa(POST Error)",
+		"Disabled By BIOS (POST Error)",
 		"CPU is Idle, waiting to be enabled",
 		"Reserved",
 		"Reserved",
@@ -666,9 +674,13 @@ func (p ProcessorStatus) StringList() []string {
 	ret = append(ret, status[p&0x07])
 
 	if p&0x40 != 0 {
-		ret = append(ret, "CPU Socket Polulated")
+		ret = append(ret, "CPU Socket Populated")
 	}
 	return ret
+}
+
+func (p ProcessorStatus) MarshalText() ([]byte, error) {
+	return []byte(p.String()), nil
 }
 
 type ProcessorUpgrade byte
@@ -796,7 +808,22 @@ func (p ProcessorUpgrade) String() string {
 	return upgrades[p]
 }
 
+func (p ProcessorUpgrade) MarshalText() ([]byte, error) {
+	return []byte(p.String()), nil
+}
+
 type ProcessorCharacteristics uint16
+
+var processorCharacteristics = []string{
+	"Reserved",
+	"Unknown",
+	"64-bit Capable",
+	"Multi-Core",
+	"Hardware Thread",
+	"Execute Protection",
+	"Enhanced Virtualization",
+	"Power/Performance Control",
+}
 
 const (
 	ProcessorCharacteristicsReserved ProcessorCharacteristics = 1 << iota
@@ -810,45 +837,25 @@ const (
 )
 
 func (p ProcessorCharacteristics) String() string {
-	chars := [...]string{
-		"Reserved",
-		"Unknown",
-		"64-bit Capable",
-		"Multi-Core",
-		"Hardware Thread",
-		"Execute Protection",
-		"Enhanced Virtualization",
-		"Power/Performance Control",
-		// Bits 8:15 reserved
-	}
-	var s string
+	return strings.Join(p.StringList(), "\n\t\t")
+}
+
+func (p ProcessorCharacteristics) StringList() []string {
+	var s []string
 	for i := uint(0); i < 8; i++ {
 		if p&(1<<i) != 0 {
-			s += "\n\t\t" + chars[i]
+			s = append(s, processorCharacteristics[i])
 		}
 	}
 	return s
 }
 
-func (p ProcessorCharacteristics) StringList() []string {
-	chars := [...]string{
-		"Reserved",
-		"Unknown",
-		"64-bit Capable",
-		"Multi-Core",
-		"Hardware Thread",
-		"Execute Protection",
-		"Enhanced Virtualization",
-		"Power/Performance Control",
-		// Bits 8:15 reserved
+func (p ProcessorCharacteristics) MarshalJSON() ([]byte, error) {
+	buf := map[string]bool{}
+	for _, s := range p.StringList() {
+		buf[s] = true
 	}
-	var s []string
-	for i := uint(0); i < 8; i++ {
-		if p&(1<<i) != 0 {
-			s = append(s, chars[i])
-		}
-	}
-	return s
+	return json.Marshal(&buf)
 }
 
 // type 4

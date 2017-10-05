@@ -34,7 +34,7 @@ func newGroupAssociations(h dmiHeader) dmiTyper {
 	var ga GroupAssociations
 	data := h.data
 	ga.GroupName = h.FieldString(int(data[0x04]))
-	cnt := (h.Length - 5) / 3
+	cnt := (h.length - 5) / 3
 	items := data[5:]
 	var i byte
 	for i = 0; i < cnt; i++ {

@@ -51,6 +51,10 @@ func (p PhysicalMemoryArrayLocation) String() string {
 	return locations[p-1]
 }
 
+func (p PhysicalMemoryArrayLocation) MarshalText() ([]byte, error) {
+	return []byte(p.String()), nil
+}
+
 type PhysicalMemoryArrayUse byte
 
 const (
@@ -74,6 +78,10 @@ func (p PhysicalMemoryArrayUse) String() string {
 		"Cache memory",
 	}
 	return uses[p-1]
+}
+
+func (p PhysicalMemoryArrayUse) MarshalText() ([]byte, error) {
+	return []byte(p.String()), nil
 }
 
 type PhysicalMemoryArrayErrorCorrection byte
@@ -100,16 +108,18 @@ func (p PhysicalMemoryArrayErrorCorrection) String() string {
 	}
 	return types[p-1]
 }
+func (p PhysicalMemoryArrayErrorCorrection) MarshalText() ([]byte, error) {
+	return []byte(p.String()), nil
+}
 
 type PhysicalMemoryArray struct {
 	infoCommon
-	Location                PhysicalMemoryArrayLocation
-	Use                     PhysicalMemoryArrayUse
-	ErrorCorrection         PhysicalMemoryArrayErrorCorrection
-	MaximumCapacity         uint32
-	ErrorInformationHandle  uint16
-	NumberOfMemoryDevices   uint16
-	ExtendedMaximumCapacity uint64
+	Location               PhysicalMemoryArrayLocation
+	Use                    PhysicalMemoryArrayUse
+	ErrorCorrection        PhysicalMemoryArrayErrorCorrection
+	MaximumCapacity        uint64
+	ErrorInformationHandle uint16
+	NumberOfMemoryDevices  uint16
 }
 
 func (p PhysicalMemoryArray) String() string {
@@ -117,32 +127,32 @@ func (p PhysicalMemoryArray) String() string {
 		"\tLocation: %s\n"+
 		"\tUse: %s\n"+
 		"\tMemory Error Correction: %s\n"+
-		"\tMaximum Capacity: %d kb\n"+
-		"\tMemory Error Information Handle: %0#x\n"+
-		"\tNumber of Memory Devices: %d\n"+
-		"\tExtended Maximum Capacity: %d",
+		"\tMaximum Capacity: %d\n"+
+		"\tMemory Error Information Handle: %d\n"+
+		"\tNumber of Memory Devices: %d\n",
 		p.Location,
 		p.Use,
 		p.ErrorCorrection,
 		p.MaximumCapacity,
 		p.ErrorInformationHandle,
-		p.NumberOfMemoryDevices,
-		p.ExtendedMaximumCapacity)
+		p.NumberOfMemoryDevices)
 }
 
 func newPhysicalMemoryArray(h dmiHeader) dmiTyper {
 	data := h.data
-	p := &PhysicalMemoryArray{
-		Location:                PhysicalMemoryArrayLocation(data[0x04]),
-		Use:                     PhysicalMemoryArrayUse(data[0x05]),
-		ErrorCorrection:         PhysicalMemoryArrayErrorCorrection(data[0x06]),
-		MaximumCapacity:         u32(data[0x07:0x0B]),
-		ErrorInformationHandle:  u16(data[0x0B:0x0D]),
-		NumberOfMemoryDevices:   u16(data[0x0D:0x0F]),
-		ExtendedMaximumCapacity: u64(data[0x0F:]),
+	res := &PhysicalMemoryArray{
+		Location:               PhysicalMemoryArrayLocation(data[0x04]),
+		Use:                    PhysicalMemoryArrayUse(data[0x05]),
+		ErrorCorrection:        PhysicalMemoryArrayErrorCorrection(data[0x06]),
+		MaximumCapacity:        uint64(u32(data[0x07:0x0B])),
+		ErrorInformationHandle: u16(data[0x0B:0x0D]),
+		NumberOfMemoryDevices:  u16(data[0x0D:0x0F]),
 	}
-	PhysicalMemoryArrays = append(PhysicalMemoryArrays, p)
-	return p
+	if res.MaximumCapacity == 0x80000000 {
+		res.MaximumCapacity = u64(data[0x0F:])
+	}
+	PhysicalMemoryArrays = append(PhysicalMemoryArrays, res)
+	return res
 }
 
 var PhysicalMemoryArrays []*PhysicalMemoryArray

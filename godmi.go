@@ -18,8 +18,6 @@ import (
 
 const OUT_OF_SPEC = "<OUT OF SPEC>"
 
-//var gdmi map[SMBIOSStructureType]interface{}
-
 type SMBIOSStructureType byte
 
 const (
@@ -126,9 +124,9 @@ func (b SMBIOSStructureType) String() string {
 type SMBIOSStructureHandle uint16
 
 type infoCommon struct {
-	SMType SMBIOSStructureType
-	Length byte
-	Handle SMBIOSStructureHandle
+	smType SMBIOSStructureType
+	length byte
+	handle SMBIOSStructureHandle
 }
 
 type entryPoint struct {
@@ -188,9 +186,9 @@ func newdmiHeader(d []byte) *dmiHeader {
 	}
 	h := dmiHeader{
 		infoCommon: infoCommon{
-			SMType: SMBIOSStructureType(d[0x00]),
-			Length: d[1],
-			Handle: SMBIOSStructureHandle(u16(d[0x02:0x04])),
+			smType: SMBIOSStructureType(d[0x00]),
+			length: d[1],
+			handle: SMBIOSStructureHandle(u16(d[0x02:0x04])),
 		},
 		data: d,
 	}
@@ -200,6 +198,7 @@ func newdmiHeader(d []byte) *dmiHeader {
 
 func (h dmiHeader) Next() *dmiHeader {
 	index := h.getStructTableEndIndex()
+
 	if index == -1 {
 		return nil
 	}
@@ -208,16 +207,16 @@ func (h dmiHeader) Next() *dmiHeader {
 
 func (h dmiHeader) getStructTableEndIndex() int {
 	de := []byte{0, 0}
-	next := h.data[h.Length:]
+	next := h.data[h.length:]
 	endIdx := bytes.Index(next, de)
 	if endIdx == -1 {
 		return -1
 	}
-	return int(h.Length) + endIdx
+	return int(h.length) + endIdx
 }
 
 func (h dmiHeader) decode() error {
-	t := h.SMType
+	t := h.smType
 	newfn, err := getTypeFunc(t)
 	if err != nil {
 		return err
@@ -231,7 +230,7 @@ func (h *dmiHeader) setStringFields() {
 	if index == -1 {
 		return
 	}
-	fieldData := h.data[h.Length:index]
+	fieldData := h.data[h.length:index]
 	bs := bytes.Split(fieldData, []byte{0})
 	for _, v := range bs {
 		h.strFields = append(h.strFields, string(v))
@@ -240,7 +239,7 @@ func (h *dmiHeader) setStringFields() {
 
 func (h dmiHeader) FieldString(strIndex int) string {
 	if strIndex == 0 {
-		return "FieldString(offset==0,Not Specified)"
+		return ""
 	}
 	if strIndex > len(h.strFields) {
 		return fmt.Sprintf("FieldString ### ERROR:strFields Len:%d, strIndex:%d", len(h.strFields), strIndex)
@@ -256,7 +255,7 @@ func (e entryPoint) StructureTable() error {
 	for hd := newdmiHeader(tmem); hd != nil; hd = hd.Next() {
 		err := hd.decode()
 		if err != nil {
-			fmt.Println("info: ", err)
+			//fmt.Println("info: ", err)
 			continue
 		}
 	}

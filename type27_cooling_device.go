@@ -1,9 +1,9 @@
 /*
 * File Name:	type27_cooling_device.go
-* Description:	
+* Description:
 * Author:	Chapman Ou <ochapman.cn@gmail.com>
 * Created:	2014-08-19
-*/
+ */
 package godmi
 
 import (
@@ -99,13 +99,11 @@ func (c CoolingDevice) String() string {
 		c.CoolingUintGroup,
 		c.OEMdefined,
 	)
-	if c.Length > 0x0C {
+	if c.length > 0x0C {
 		s += fmt.Sprintf("\tNominal Speed: %d\n", c.NominalSpeed)
 	}
-	if c.Length > 0x0F {
+	if c.length > 0x0F {
 		s += fmt.Sprintf("\tDescription: %s\n", c.Description)
 	}
 	return s
 }
-
-

@@ -8,58 +8,26 @@
 package godmi
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 )
 
-type BIOSCharacteristics uint64
+type BIOSCharacteristics [10]byte
 
-// BIOS Characteristics
-const (
-	BIOSCharacteristicsReserved0 BIOSCharacteristics = 1 << iota
-	BIOSCharacteristicsReserved1
-	BIOSCharacteristicsUnknown
-	BIOSCharacteristicsNotSupported
-	BIOSCharacteristicsISASupported
-	BIOSCharacteristicsMCASupported
-	BIOSCharacteristicsEISASupported
-	BIOSCharacteristicsPCISupported
-	BIOSCharacteristicsPCMCIASupported
-	BIOSCharacteristicsPlugPlaySupported
-	BIOSCharacteristicsAPMSupported
-	BIOSCharacteristicsUpgradeable
-	BIOSCharacteristicsShadowingIsAllowed
-	BIOSCharacteristicsVLVESASupported
-	BIOSCharacteristicsESCDSupported
-	BIOSCharacteristicsBootFromCDSupported
-	BIOSCharacteristicsSelectableBootSupported
-	BIOSCharacteristicsBIOSROMIsSockectd
-	BIOSCharacteristicsBootFromPCMCIASupported
-	BIOSCharacteristicsEDDSupported
-	BIOSCharacteristicsJPFloppyNECSupported
-	BIOSCharacteristicsJPFloppyToshibaSupported
-	BIOSCharacteristics525_360KBFloppySupported
-	BIOSCharacteristics525_1_2MBFloppySupported
-	BIOSCharacteristics35_720KBFloppySupported
-	BIOSCharacteristics35_2_88MBFloppySupported
-	BIOSCharacteristicsPrintScreenSupported
-	BIOSCharacteristics8042KeyboardSupported
-	BIOSCharacteristicsSerialSupported
-	BIOSCharacteristicsPrinterSupported
-	BIOSCharacteristicsCGAMonoSupported
-	BIOSCharacteristicsNECPC98
-	//Bit32:47 Reserved for BIOS vendor
-	//Bit47:63 Reserved for system vendor
-)
-
-func (b BIOSCharacteristics) String() string {
-	var s string
-	chars := [...]string{
+var biosCharacteristics = [10][8]string{
+	{
+		"Reserved1",
+		"Reserved2",
+		"Reserved3",
 		"BIOS characteristics not supported", /* 3 */
 		"ISA is supported",
 		"MCA is supported",
 		"EISA is supported",
 		"PCI is supported",
+	},
+	{
 		"PC Card (PCMCIA) is supported",
 		"PNP is supported",
 		"APM is supported",
@@ -68,6 +36,8 @@ func (b BIOSCharacteristics) String() string {
 		"VLB is supported",
 		"ESCD support is available",
 		"Boot from CD is supported",
+	},
+	{
 		"Selectable boot is supported",
 		"BIOS ROM is socketed",
 		"Boot from PC Card (PCMCIA) is supported",
@@ -76,6 +46,8 @@ func (b BIOSCharacteristics) String() string {
 		"Japanese floppy for Toshiba 1.2 MB is supported (int 13h)",
 		"5.25\"/360 kB floppy services are supported (int 13h)",
 		"5.25\"/1.2 MB floppy services are supported (int 13h)",
+	},
+	{
 		"3.5\"/720 kB floppy services are supported (int 13h)",
 		"3.5\"/2.88 MB floppy services are supported (int 13h)",
 		"Print screen service is supported (int 5h)",
@@ -83,46 +55,48 @@ func (b BIOSCharacteristics) String() string {
 		"Serial services are supported (int 14h)",
 		"Printer services are supported (int 17h)",
 		"CGA/mono video services are supported (int 10h)",
-		"NEC PC-98", /* 31 */
-	}
-
-	for i := uint32(4); i < 32; i++ {
-		if b&(1<<i) != 0 {
-			s += "\n\t\t" + chars[i-3]
-		}
-	}
-	return s
-}
-
-type BIOSCharacteristicsExt1 byte
-
-// BIOS Characteristics Extension Bytes(Ext1)
-// Byte 1
-const (
-	BIOSCharacteristicsExt1ACPISupported BIOSCharacteristicsExt1 = 1 << iota
-	BIOSCharacteristicsExt1USBLegacySupported
-	BIOSCharacteristicsExt1AGPSupported
-	BIOSCharacteristicsExt1I2OBootSupported
-	BIOSCharacteristicsExt1LS120SupperDiskBootSupported
-	BIOSCharacteristicsExt1ATAPIZIPDriveBootSupported
-	BIOSCharacteristicsExt11394BootSupported
-	BIOSCharacteristicsExt1SmartBatterySupported
-)
-
-// BIOS Characteristics Extension Bytes(Ext2)
-// Byte 2
-const (
-	BIOSCharacteristicsExt2BIOSBootSpecSupported BIOSCharacteristicsExt2 = 1 << iota
-	BIOSCharacteristicsExt2FuncKeyInitiatedNetworkBootSupported
-	BIOSCharacteristicsExt2EnableTargetedContentDistribution
-	BIOSCharacteristicsExt2UEFISpecSupported
-	BIOSCharacteristicsExt2VirtualMachine
-	// Bits 5:7 Reserved for future assignment
-)
-
-func (b BIOSCharacteristicsExt1) String() string {
-	var s string
-	chars := [...]string{
+		"NEC PC-98"},
+	{
+		"BIOS Reserved 0",
+		"BIOS Reserved 1",
+		"BIOS Reserved 2",
+		"BIOS Reserved 3",
+		"BIOS Reserved 4",
+		"BIOS Reserved 5",
+		"BIOS Reserved 6",
+		"BIOS Reserved 7",
+	},
+	{
+		"BIOS Reserved 8",
+		"BIOS Reserved 9",
+		"BIOS Reserved a",
+		"BIOS Reserved b",
+		"BIOS Reserved c",
+		"BIOS Reserved d",
+		"BIOS Reserved e",
+		"BIOS Reserved f",
+	},
+	{
+		"System Reserved 0",
+		"System Reserved 1",
+		"System Reserved 2",
+		"System Reserved 3",
+		"System Reserved 4",
+		"System Reserved 5",
+		"System Reserved 6",
+		"System Reserved 7",
+	},
+	{
+		"System Reserved 8",
+		"System Reserved 9",
+		"System Reserved a",
+		"System Reserved b",
+		"System Reserved c",
+		"System Reserved d",
+		"System Reserved e",
+		"System Reserved f",
+	},
+	{
 		"ACPI is supported", /* 0 */
 		"USB legacy is supported",
 		"AGP is supported",
@@ -131,31 +105,41 @@ func (b BIOSCharacteristicsExt1) String() string {
 		"ATAPI Zip drive boot is supported",
 		"IEEE 1394 boot is supported",
 		"Smart battery is supported", /* 7 */
-	}
-
-	for i := uint32(0); i < 7; i++ {
-		if b&(1<<i) != 0 {
-			s += "\n\t\t" + chars[i]
-		}
-	}
-	return s
-}
-
-type BIOSCharacteristicsExt2 byte
-
-func (b BIOSCharacteristicsExt2) String() string {
-	var s string
-	chars := [...]string{
+	},
+	{
 		"BIOS boot specification is supported", /* 0 */
 		"Function key-initiated network boot is supported",
 		"Targeted content distribution is supported",
 		"UEFI is supported",
 		"System is a virtual machine", /* 4 */
-	}
+	},
+}
 
-	for i := uint32(0); i < 5; i++ {
-		if b&(1<<i) != 0 {
-			s += "\n\t\t" + chars[i]
+func (b BIOSCharacteristics) toMap() map[string]bool {
+	res := map[string]bool{}
+	for segment := range b {
+		for i := range biosCharacteristics {
+			if b[segment]>>uint(i)&1 > 0 {
+				log.Printf("%d:%d", segment, i)
+				res[biosCharacteristics[segment][i]] = true
+			}
+		}
+	}
+	return res
+}
+
+func (b BIOSCharacteristics) MarshalJSON() ([]byte, error) {
+	ref := b.toMap()
+	return json.Marshal(&ref)
+}
+
+func (b BIOSCharacteristics) String() string {
+	var s string
+	for segment := range b {
+		for i := range biosCharacteristics {
+			if b[segment]>>uint(i)&1 > 0 {
+				s += "\n\t\t" + biosCharacteristics[segment][i]
+			}
 		}
 	}
 	return s
@@ -185,8 +169,6 @@ type BIOSInformation struct {
 	RomSize                                BIOSRomSize
 	RuntimeSize                            BIOSRuntimeSize
 	Characteristics                        BIOSCharacteristics
-	CharacteristicsExt1                    BIOSCharacteristicsExt1
-	CharacteristicsExt2                    BIOSCharacteristicsExt2
 	SystemBIOSMajorRelease                 byte
 	SystemBIOSMinorRelease                 byte
 	EmbeddedControllerFirmwareMajorRelease byte
@@ -209,13 +191,6 @@ func (b BIOSInformation) String() string {
 		b.RuntimeSize,
 		b.RomSize,
 		b.Characteristics)
-
-	if b.CharacteristicsExt1 != 0 {
-		s += b.CharacteristicsExt1.String()
-	}
-	if b.CharacteristicsExt2 != 0 {
-		s += b.CharacteristicsExt2.String()
-	}
 	return s
 }
 
@@ -231,13 +206,14 @@ func newBIOSInformation(h dmiHeader) dmiTyper {
 		ReleaseDate:            h.FieldString(int(data[0x08])),
 		RomSize:                BIOSRomSize(data[0x09]),
 		RuntimeSize:            BIOSRuntimeSize((uint(0x10000) - uint(sas)) << 4),
-		Characteristics:        BIOSCharacteristics(u64(data[0x0A:0x12])),
+		Characteristics:        BIOSCharacteristics([10]byte{}),
 	}
-	if h.Length >= 0x13 {
-		bi.CharacteristicsExt1 = BIOSCharacteristicsExt1(data[0x12])
+	copy(bi.Characteristics[:], data[0x0A:0x12])
+	if h.length >= 0x13 {
+		bi.Characteristics[8] = data[0x12]
 	}
-	if h.Length >= 0x14 {
-		bi.CharacteristicsExt2 = BIOSCharacteristicsExt2(data[0x13])
+	if h.length >= 0x14 {
+		bi.Characteristics[9] = data[0x13]
 	}
 	BIOSInformations = append(BIOSInformations, bi)
 

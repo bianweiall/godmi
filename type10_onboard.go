@@ -78,12 +78,3 @@ func newOnBoardDeviceInformation(h dmiHeader) dmiTyper {
 	}
 	return &d
 }
-
-func GetOnBoardDeviceInformation() *OnBoardDeviceInformation {
-	return nil
-}
-
-func init() {
-	// obsolete
-	//addTypeFunc(SMBIOSStructureTypeOnBoardDevices, newOnBoardDeviceInformation)
-}

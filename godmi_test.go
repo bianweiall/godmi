@@ -4,13 +4,14 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	. "github.com/ochapman/godmi"
 	"log"
 	"os/exec"
 	"reflect"
 	"strconv"
 	"strings"
 	"testing"
+
+	. "github.com/ochapman/godmi"
 )
 
 func dmidecode(arg ...string) string {
@@ -100,7 +101,8 @@ dmidecode command has following STRING keywords:
 */
 
 func TestBIOS(t *testing.T) {
-	bi := GetBIOSInformation()
+	bis := GetBIOSInformation()
+	bi := bis[len(bis)-1]
 	checkInfo(bi, "bios-vendor", t)
 	m := map[string]string{
 		"bios-vendor":       bi.Vendor,
@@ -112,7 +114,7 @@ func TestBIOS(t *testing.T) {
 }
 
 func TestSystem(t *testing.T) {
-	si := GetSystemInformation()
+	si := GetSystemInformation()[0]
 	if si == nil {
 		t.Skip("GetSystemInformation() is nil")
 	}
@@ -128,7 +130,7 @@ func TestSystem(t *testing.T) {
 }
 
 func TestBaseboard(t *testing.T) {
-	bi := GetBaseboardInformation()
+	bi := GetBaseboardInformation()[0]
 	if bi == nil {
 		t.Skip("GetBaseBoardInformation() is nil")
 	}
@@ -144,7 +146,7 @@ func TestBaseboard(t *testing.T) {
 }
 
 func TestChassis(t *testing.T) {
-	ci := GetChassisInformation()
+	ci := GetChassisInformation()[0]
 	if ci == nil {
 		t.Skip("GetChassisInformation() is nil")
 	}
@@ -160,7 +162,7 @@ func TestChassis(t *testing.T) {
 }
 
 func TestProcessor(t *testing.T) {
-	pi := GetProcessorInformation()
+	pi := GetProcessorInformation()[0]
 	if pi == nil {
 		t.Skip("GetProcessorInformation() is nil")
 	}

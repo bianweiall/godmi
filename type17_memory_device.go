@@ -9,6 +9,7 @@ package godmi
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type MemoryDeviceFormFactor byte
@@ -32,6 +33,10 @@ func (m MemoryDeviceFormFactor) String() string {
 		"FB-DIMM",
 	}
 	return factors[m-1]
+}
+
+func (m MemoryDeviceFormFactor) MarshalText() ([]byte, error) {
+	return []byte(m.String()), nil
 }
 
 type MemoryDeviceType byte
@@ -58,9 +63,9 @@ func (m MemoryDeviceType) String() string {
 		"DDR",
 		"DDR2",
 		"DDR2 FB-DIMM",
-		"Reserved",
-		"Reserved",
-		"Reserved",
+		"Reserved 0",
+		"Reserved 1",
+		"Reserved 2",
 		"DDR3",
 		"FBD2",
 		"DDR4",
@@ -69,81 +74,17 @@ func (m MemoryDeviceType) String() string {
 		"LPDDR3",
 		"LPDDR4",
 	}
+	if len(types) <= int(m) {
+		return "Unknown"
+	}
 	return types[m-1]
 }
 
-type MemoryDeviceTypeDetail uint16
-
-func (m MemoryDeviceTypeDetail) String() string {
-	//details := [...]string{
-	//	"Reserved",
-	//	"Other",
-	//	"Unknown",
-	//	"Fast-paged",
-	//	"Static column",
-	//	"Pseudo-static",
-	//	"RAMBUS",
-	//	"Synchronous",
-	//	"CMOS",
-	//	"EDO",
-	//	"Window DRAM",
-	//	"Cache DRAM",
-	//	"Non-volatile",
-	//	"Registered (Buffered)",
-	//	"Unbuffered (Unregistered)",
-	//	"LRDIMM",
-	//}
-	var ret string
-	if CheckBit(uint64(m), 1) {
-		ret += "Other"
-	}
-	if CheckBit(uint64(m), 2) {
-		ret += "Unknown"
-	}
-	if CheckBit(uint64(m), 3) {
-		ret += "Fast-paged"
-	}
-	if CheckBit(uint64(m), 4) {
-		ret += "Static column"
-	}
-	if CheckBit(uint64(m), 5) {
-		ret += "otheeudo-static"
-	}
-	if CheckBit(uint64(m), 6) {
-		ret += "RAMBUS"
-	}
-	if CheckBit(uint64(m), 7) {
-		ret += "Synchronous"
-	}
-	if CheckBit(uint64(m), 8) {
-		ret += "CMOS"
-	}
-	if CheckBit(uint64(m), 9) {
-		ret += "EDO"
-	}
-	if CheckBit(uint64(m), 10) {
-		ret += "Window DRAM"
-	}
-	if CheckBit(uint64(m), 11) {
-		ret += "Cache DRAM"
-	}
-	if CheckBit(uint64(m), 12) {
-		ret += "Non-volatile"
-	}
-	if CheckBit(uint64(m), 13) {
-		ret += "Registered (Buffered)"
-	}
-	if CheckBit(uint64(m), 14) {
-		ret += "Unbuffered (Unregistered)"
-	}
-	if CheckBit(uint64(m), 15) {
-		ret += "LRDIMM"
-	}
-	return ret
+func (m MemoryDeviceType) MarshalText() ([]byte, error) {
+	return []byte(m.String()), nil
 }
 
 type MemorySizeType uint16
-
 type MemoryDeviceSetType byte
 
 func (s MemoryDeviceSetType) String() string {
@@ -166,13 +107,47 @@ func (s MemorySpeedType) String() string {
 	return strconv.Itoa(int(s))
 }
 
+type MemoryDeviceTypeDetail uint16
+
+func (m MemoryDeviceTypeDetail) String() string {
+	details := [...]string{
+		"Reserved",
+		"Other",
+		"Unknown",
+		"Fast-paged",
+		"Static column",
+		"Pseudo-static",
+		"RAMBUS",
+		"Synchronous",
+		"CMOS",
+		"EDO",
+		"Window DRAM",
+		"Cache DRAM",
+		"Non-volatile",
+		"Registered (Buffered)",
+		"Unbuffered (Unregistered)",
+		"LRDIMM",
+	}
+	res := []string{}
+	for i := range details {
+		if m>>uint(i)&1 > 0 {
+			res = append(res, details[i])
+		}
+	}
+	return strings.Join(res, ", ")
+}
+
+func (m MemoryDeviceTypeDetail) MarshalText() ([]byte, error) {
+	return []byte(m.String()), nil
+}
+
 type MemoryDevice struct {
 	infoCommon
 	PhysicalMemoryArrayHandle  uint16
 	ErrorInformationHandle     uint16
 	TotalWidth                 uint16
 	DataWidth                  uint16
-	Size                       uint16
+	Size                       uint32
 	FormFactor                 MemoryDeviceFormFactor
 	DeviceSet                  MemoryDeviceSetType
 	DeviceLocator              string
@@ -185,7 +160,6 @@ type MemoryDevice struct {
 	AssetTag                   string
 	PartNumber                 string
 	Attributes                 byte
-	ExtendedSize               uint32
 	ConfiguredMemoryClockSpeed uint16
 	MinimumVoltage             uint16
 	MaximumVoltage             uint16
@@ -210,9 +184,8 @@ func (m MemoryDevice) String() string {
 		"\tSerial Number: %s\n"+
 		"\tAsset Tag: %s\n"+
 		"\tPart Number: %s\n"+
-		"\tAttributes: rank %d\n"+
-		"\tExtended Size: %d MB\n"+
-		"\tConfigured Memory Clock Speed: %d MHz\n"+
+		"\tAttributes: %s\n"+
+		"\tConfigured Memory Clock Speed: %d\n"+
 		"\tMinimum voltage: %d\n"+
 		"\tMaximum voltage: %d\n"+
 		"\tConfigured voltage: %d ",
@@ -233,7 +206,6 @@ func (m MemoryDevice) String() string {
 		m.AssetTag,
 		m.PartNumber,
 		m.Attributes,
-		m.ExtendedSize,
 		m.ConfiguredMemoryClockSpeed,
 		m.MinimumVoltage,
 		m.MaximumVoltage,
@@ -243,12 +215,12 @@ func (m MemoryDevice) String() string {
 
 func newMemoryDevice(h dmiHeader) dmiTyper {
 	data := h.data
-	m := &MemoryDevice{
+	res := &MemoryDevice{
 		PhysicalMemoryArrayHandle:  u16(data[0x04:0x06]),
 		ErrorInformationHandle:     u16(data[0x06:0x08]),
 		TotalWidth:                 u16(data[0x08:0x0A]),
 		DataWidth:                  u16(data[0x0A:0x0C]),
-		Size:                       u16(data[0x0C:0x0e]),
+		Size:                       uint32(u16(data[0x0C:0x0e])),
 		FormFactor:                 MemoryDeviceFormFactor(data[0x0E]),
 		DeviceSet:                  MemoryDeviceSetType(data[0x0F]),
 		DeviceLocator:              h.FieldString(int(data[0x10])),
@@ -261,14 +233,16 @@ func newMemoryDevice(h dmiHeader) dmiTyper {
 		AssetTag:                   h.FieldString(int(data[0x19])),
 		PartNumber:                 h.FieldString(int(data[0x1A])),
 		Attributes:                 data[0x1B],
-		ExtendedSize:               u32(data[0x1C:0x20]),
 		ConfiguredMemoryClockSpeed: u16(data[0x20:0x22]),
 		MinimumVoltage:             u16(data[0x22:0x24]),
 		MaximumVoltage:             u16(data[0x24:0x26]),
 		ConfiguredVoltage:          u16(data[0x26:0x28]),
 	}
-	MemoryDevices = append(MemoryDevices, m)
-	return m
+	if res.Size == 0x7fff {
+		res.Size = u32(data[0x1C:0x20])
+	}
+	MemoryDevices = append(MemoryDevices, res)
+	return res
 }
 
 var MemoryDevices []*MemoryDevice

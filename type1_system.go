@@ -14,31 +14,24 @@ import (
 
 type SystemInformationWakeUpType byte
 
-const (
-	SystemInformationReserved SystemInformationWakeUpType = iota
-	SystemInformationOther
-	SystemInformationUnknown
-	SystemInformationAPM_Timer
-	SystemInformationModem_Ring
-	SystemInformationLAN_Remote
-	SystemInformationPower_Switch
-	SystemInformationPCI_PME
-	SystemInformationAC_Power_Restored
-)
+var systemInformationWakeupType = []string{
+	"Reserved", /* 0x00 */
+	"Other",
+	"Unknown",
+	"APM Timer",
+	"Modem Ring",
+	"LAN Remote",
+	"Power Switch",
+	"PCI PME#",
+	"AC Power Restored", /* 0x08 */
+}
 
 func (w SystemInformationWakeUpType) String() string {
-	types := [...]string{
-		"Reserved", /* 0x00 */
-		"Other",
-		"Unknown",
-		"APM Timer",
-		"Modem Ring",
-		"LAN Remote",
-		"Power Switch",
-		"PCI PME#",
-		"AC Power Restored", /* 0x08 */
-	}
-	return types[w]
+	return systemInformationWakeupType[w]
+}
+
+func (w SystemInformationWakeUpType) MarshalText() ([]byte, error) {
+	return []byte(w.String()), nil
 }
 
 type SystemInformation struct {

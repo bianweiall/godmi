@@ -85,6 +85,10 @@ func (c ChassisType) String() string {
 	return OUT_OF_SPEC
 }
 
+func (c ChassisType) MarshalText() ([]byte, error) {
+	return []byte(c.String()), nil
+}
+
 type ChassisLock byte
 
 func (c ChassisLock) String() string {
@@ -93,6 +97,10 @@ func (c ChassisLock) String() string {
 		"Present",     /* 0x01 */
 	}
 	return locks[c]
+}
+
+func (c ChassisLock) MarshalText() ([]byte, error) {
+	return []byte(c.String()), nil
 }
 
 type ChassisState byte
@@ -116,6 +124,10 @@ func (c ChassisState) String() string {
 		"NonRecoverable",
 	}
 	return states[c-1]
+}
+
+func (c ChassisState) MarshalText() ([]byte, error) {
+	return []byte(c.String()), nil
 }
 
 type ChassisContainedElementType byte
@@ -145,6 +157,10 @@ func (s ChassisSecurityStatus) String() string {
 		"ExternalInterfaceEnabled",
 	}
 	return status[s-1]
+}
+
+func (c ChassisSecurityStatus) MarshalText() ([]byte, error) {
+	return []byte(c.String()), nil
 }
 
 type ChassisHeight byte

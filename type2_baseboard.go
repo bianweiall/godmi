@@ -8,77 +8,71 @@
 package godmi
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 )
 
 type BaseboardFeatureFlags byte
 
-// Baseboard feature flags
-const (
-	BaseboardFeatureFlagsHostingBoard BaseboardFeatureFlags = 1 << iota
-	BaseboardFeatureFlagsAtLeastOneDaughter
-	BaseboardFeatureFlagsRemovable
-	BaseboardFeatureFlagsRepleaceable
-	BaseboardFeatureFlagsHotSwappable
-	//FeatureFlagsReserved = 000b
-)
+var baseboardFeatureFlags = []string{
+	"Board is a hosting board", /* 0 */
+	"Board requires at least one daughter board",
+	"Board is removable",
+	"Board is replaceable",
+	"Board is hot swappable", /* 4 */
+}
 
 func (f BaseboardFeatureFlags) String() string {
-	features := [...]string{
-		"Board is a hosting board", /* 0 */
-		"Board requires at least one daughter board",
-		"Board is removable",
-		"Board is replaceable",
-		"Board is hot swappable", /* 4 */
-	}
 	var s string
 	for i := uint32(0); i < 5; i++ {
 		if f&(1<<i) != 0 {
-			s += "\n\t\t" + features[i]
+			s += "\n\t\t" + baseboardFeatureFlags[i]
 		}
 	}
 	return s
 }
 
+func (b BaseboardFeatureFlags) toMap() map[string]bool {
+	res := map[string]bool{}
+	for i := range baseboardFeatureFlags {
+		if b>>uint(i)&1 > 0 {
+			res[baseboardFeatureFlags[i]] = true
+		}
+	}
+	return res
+}
+
+func (b BaseboardFeatureFlags) MarshalJSON() ([]byte, error) {
+	ref := b.toMap()
+	return json.Marshal(&ref)
+}
+
 type BaseboardType byte
 
-const (
-	BaseboardTypeUnknown BaseboardType = 1 + iota
-	BaseboardTypeOther
-	BaseboardTypeServerBlade
-	BaseboardTypeConnectivitySwitch
-	BaseboardTypeSystemManagementModule
-	BaseboardTypeProcessorModule
-	BaseboardTypeIOModule
-	BaseboardTypeMemModule
-	BaseboardTypeDaughterBoard
-	BaseboardTypeMotherboard
-	BaseboardTypeProcessorMemmoryModule
-	BaseboardTypeProcessorIOModule
-	BaseboardTypeInterconnectBoard
-)
+var baseboardType = []string{
+	"reserved",
+	"Unknown",
+	"Other",
+	"Server Blade",
+	"Connectivity Switch",
+	"System Management Module",
+	"Processor Module",
+	"I/O Module",
+	"Memory Module",
+	"Daughter Board",
+	"Motherboard",
+	"Processor+Memory Module",
+	"Processor+I/O Module",
+	"Interconnect Board", /* 0x0D */
+}
 
 func (b BaseboardType) String() string {
-	types := [...]string{
-		"Unknown", /* 0x01 */
-		"Other",
-		"Server Blade",
-		"Connectivity Switch",
-		"System Management Module",
-		"Processor Module",
-		"I/O Module",
-		"Memory Module",
-		"Daughter Board",
-		"Motherboard",
-		"Processor+Memory Module",
-		"Processor+I/O Module",
-		"Interconnect Board", /* 0x0D */
-	}
-	if b > BaseboardTypeUnknown && b < BaseboardTypeInterconnectBoard {
-		return types[b-1]
-	}
-	return "Out Of Spec"
+	return baseboardType[b]
+}
+
+func (b BaseboardType) MarshalText() ([]byte, error) {
+	return []byte(b.String()), nil
 }
 
 type BaseboardInformation struct {
