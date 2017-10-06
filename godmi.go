@@ -288,17 +288,12 @@ func getTypeFunc(t SMBIOSStructureType) (fn newFunction, err error) {
 	return fn, nil
 }
 
-func Init() {
+func Init() error {
 	eps, err := newEntryPoint()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		panic(err)
+		return err
 	}
-	err = eps.StructureTable()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		panic(err)
-	}
+	return eps.StructureTable()
 }
 
 func getMem(base uint32, length uint32) (mem []byte, err error) {
