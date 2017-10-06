@@ -9,7 +9,6 @@ package godmi
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 )
@@ -916,7 +915,6 @@ func newProcessorInformation(h dmiHeader) dmiTyper {
 		ThreadCount:     data[0x25],
 		Characteristics: ProcessorCharacteristics(u16(data[0x26:0x28])),
 	}
-	log.Printf("family: %x:%x", data[0x06], (u16(data[0x28:0x2a])))
 	if pi.Family == 0xfe {
 		pi.Family = ProcessorFamily(u16(data[0x28:0x2a]))
 	}

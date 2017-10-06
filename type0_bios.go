@@ -10,7 +10,6 @@ package godmi
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
 )
 
@@ -120,7 +119,6 @@ func (b BIOSCharacteristics) toMap() map[string]bool {
 	for segment := range b {
 		for i := range biosCharacteristics {
 			if b[segment]>>uint(i)&1 > 0 {
-				log.Printf("%d:%d", segment, i)
 				res[biosCharacteristics[segment][i]] = true
 			}
 		}
