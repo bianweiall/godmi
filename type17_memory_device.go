@@ -147,7 +147,7 @@ type MemoryDevice struct {
 	ErrorInformationHandle     uint16
 	TotalWidth                 uint16
 	DataWidth                  uint16
-	Size                       uint32
+	Size                       uint64
 	FormFactor                 MemoryDeviceFormFactor
 	DeviceSet                  MemoryDeviceSetType
 	DeviceLocator              string
@@ -220,7 +220,7 @@ func newMemoryDevice(h dmiHeader) dmiTyper {
 		ErrorInformationHandle:     u16(data[0x06:0x08]),
 		TotalWidth:                 u16(data[0x08:0x0A]),
 		DataWidth:                  u16(data[0x0A:0x0C]),
-		Size:                       uint32(u16(data[0x0C:0x0e])),
+		Size:                       uint64(u16(data[0x0C:0x0e])),
 		FormFactor:                 MemoryDeviceFormFactor(data[0x0E]),
 		DeviceSet:                  MemoryDeviceSetType(data[0x0F]),
 		DeviceLocator:              h.FieldString(int(data[0x10])),
@@ -239,7 +239,14 @@ func newMemoryDevice(h dmiHeader) dmiTyper {
 		ConfiguredVoltage:          u16(data[0x26:0x28]),
 	}
 	if res.Size == 0x7fff {
-		res.Size = u32(data[0x1C:0x20])
+		// Extended size is size in megabytes.  Translate it into bytes
+		res.Size = uint64(u32(data[0x1C:0x20])) << 20
+	} else if res.Size&0x8000 > 0 {
+		// Size is in kilobytes
+		res.Size = (res.Size &^ 0x8000) << 10
+	} else {
+		// Size is in megabytes
+		res.Size <<= 20
 	}
 	MemoryDevices = append(MemoryDevices, res)
 	return res

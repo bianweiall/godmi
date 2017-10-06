@@ -149,7 +149,12 @@ func newPhysicalMemoryArray(h dmiHeader) dmiTyper {
 		NumberOfMemoryDevices:  u16(data[0x0D:0x0F]),
 	}
 	if res.MaximumCapacity == 0x80000000 {
+		// the extended max capacity field is in bytes
 		res.MaximumCapacity = u64(data[0x0F:])
+	} else {
+		// The original max capacity field is in kb.
+		// Translate it into bytes
+		res.MaximumCapacity <<= 10
 	}
 	PhysicalMemoryArrays = append(PhysicalMemoryArrays, res)
 	return res
