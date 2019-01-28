@@ -760,6 +760,9 @@ func (p ProcessorUpgrade) String() string {
 		"Socket SP3",
 		"Socket SP3r2",
 	}
+	if int(p) >= len(upgrades) {
+		return fmt.Sprintf("Unknown_Upgrade_Value_%d", p)
+	}
 	return upgrades[p]
 }
 
