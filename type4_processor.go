@@ -571,13 +571,16 @@ const (
 )
 
 func (p ProcessorVoltage) String() string {
-	voltages := [...]string{
-		"5V",
-		"3.3V",
-		"2.9V",
-	}
 	if p&ProcessorVoltageLegacy == 0 {
-		return voltages[p]
+		voltages := map[ProcessorVoltage]string{
+			ProcessorVoltage5V:     "5V",
+			ProcessorVoltage3dot3V: "3.3V",
+			ProcessorVoltage2dot9V: "2.9V",
+		}
+		if v, ok := voltages[p]; ok {
+			return v
+		}
+		return fmt.Sprintf("Unknown%d", int(p))
 	}
 	return fmt.Sprintf("%.1fV", float32(p-0x80)/10)
 }
@@ -589,12 +592,13 @@ func (p ProcessorVoltage) MarshalText() ([]byte, error) {
 type ProcessorStatus byte
 
 const (
-	ProcessorStatusUnknown ProcessorStatus = 1 << iota
+	ProcessorStatusUnknown ProcessorStatus = iota
 	ProcessorStatusEnabled
 	ProcessorStatusDisabledByUser
 	ProcessorStatusDisabledByBIOS
 	ProcessorStatusIdle
-	ProcessorStatusReserved
+	ProcessorStatusReserved1
+	ProcessorStatusReserved2
 	ProcessorStatusOther
 )
 
